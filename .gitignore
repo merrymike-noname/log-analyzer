@@ -1,0 +1,7 @@
+/backend/src/main/resources/application.properties
+
+# Java/Spring
+backend/target/
+backend/.mvn/
+backend/build/
+*.jar
