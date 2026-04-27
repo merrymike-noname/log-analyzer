@@ -1,4 +1,5 @@
-/backend/src/main/resources/application.properties
+backend/src/main/resources/application.yml
+usage.md
 
 # Java/Spring
 backend/target/
