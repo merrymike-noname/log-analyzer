@@ -1,5 +1,7 @@
 backend/src/main/resources/application.yml
 usage.md
+.env
+.idea/*
 
 # Java/Spring
 backend/target/
