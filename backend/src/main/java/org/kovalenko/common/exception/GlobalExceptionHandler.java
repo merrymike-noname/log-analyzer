@@ -5,6 +5,8 @@ import org.kovalenko.auth.EmailAlreadyTakenException;
 import org.kovalenko.auth.InvalidCredentialsException;
 import org.kovalenko.auth.InvalidRefreshTokenException;
 import org.kovalenko.common.dto.ApiError;
+import org.kovalenko.job.JobNotFoundException;
+import org.kovalenko.job.JobProcessingException;
 import org.kovalenko.user.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
         return build(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    @ExceptionHandler(JobNotFoundException.class)
+    public ResponseEntity<ApiError> handleJobNotFound(JobNotFoundException ex) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(JobProcessingException.class)
+    public ResponseEntity<ApiError> handleJobProcessing(JobProcessingException ex) {
+        log.error("Job processing failed", ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
