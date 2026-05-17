@@ -5,6 +5,7 @@ import org.kovalenko.auth.EmailAlreadyTakenException;
 import org.kovalenko.auth.InvalidCredentialsException;
 import org.kovalenko.auth.InvalidRefreshTokenException;
 import org.kovalenko.common.dto.ApiError;
+import org.kovalenko.job.InvalidUploadException;
 import org.kovalenko.job.JobNotFoundException;
 import org.kovalenko.job.JobProcessingException;
 import org.kovalenko.user.UserNotFoundException;
@@ -50,6 +51,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleJobProcessing(JobProcessingException ex) {
         log.error("Job processing failed", ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file");
+    }
+
+    @ExceptionHandler(InvalidUploadException.class)
+    public ResponseEntity<ApiError> handleInvalidUpload(InvalidUploadException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
