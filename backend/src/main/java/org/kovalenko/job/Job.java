@@ -48,7 +48,6 @@ public class Job {
     @Column(name = "error_message")
     private String errorMessage;
 
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

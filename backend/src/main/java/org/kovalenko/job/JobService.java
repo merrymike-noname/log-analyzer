@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.kovalenko.job.analyzed.JobLogService;
 import org.kovalenko.job.parser.LogParsingService;
+import org.kovalenko.job.queue.AnalyzeTaskMessage;
+import org.kovalenko.job.queue.JobProducer;
+import org.kovalenko.job.queue.JobResultMessage;
 import org.kovalenko.job.storage.JobFileStorage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +29,7 @@ public class JobService {
     private final JobFileStorage fileStorage;
     private final LogParsingService parsingService;
     private final JobLogService jobLogService;
+    private final JobProducer jobProducer;
 
     @Transactional
     public Job create(UUID userId, MultipartFile file) {
@@ -38,6 +42,7 @@ public class JobService {
                 .originalFilename(file.getOriginalFilename())
                 .fileSizeBytes(file.getSize())
                 .status(JobStatus.QUEUED)
+                .createdAt(Instant.now())
                 .build();
         jobRepository.save(job);
 
@@ -45,34 +50,56 @@ public class JobService {
             fileStorage.createJobDir(jobId);
             fileStorage.saveOriginal(jobId, file);
 
-            job.setStatus(JobStatus.PROCESSING);
-            job.setStartedAt(Instant.now());
-            jobRepository.save(job);
-
             int lineCount = parsingService.parseToJsonl(
                     fileStorage.originalPath(jobId),
                     fileStorage.parsedPath(jobId)
             );
-
-            // TEMPORARY: copy parsed as analyzed until ML worker is integrated
-            Files.copy(fileStorage.parsedPath(jobId), fileStorage.analyzedPath(jobId));
-
             job.setLineCount(lineCount);
-            job.setStatus(JobStatus.DONE);
-            job.setFinishedAt(Instant.now());
             jobRepository.save(job);
 
-            log.info("Job {} processed: {} lines parsed", jobId, lineCount);
+            // Hand off to ML worker via queue
+            AnalyzeTaskMessage message = new AnalyzeTaskMessage(
+                    jobId,
+                    fileStorage.parsedPath(jobId).toString()
+            );
+            jobProducer.publishAnalyzeTask(message);
+
+            log.info("Job {} queued for analysis ({} lines parsed)", jobId, lineCount);
             return job;
 
         } catch (IOException e) {
-            log.error("Failed to process job {}", jobId, e);
+            log.error("Failed to prepare job {}", jobId, e);
             job.setStatus(JobStatus.FAILED);
-            job.setErrorMessage("Processing failed: " + e.getMessage());
+            job.setErrorMessage("Preparation failed: " + e.getMessage());
             job.setFinishedAt(Instant.now());
             jobRepository.save(job);
-            throw new JobProcessingException("Failed to process job " + jobId, e);
+            throw new JobProcessingException("Failed to prepare job " + jobId, e);
         }
+    }
+
+    /**
+     * Called by JobResultConsumer when ML worker reports completion.
+     */
+    @Transactional
+    public void applyResult(JobResultMessage message) {
+        Job job = jobRepository.findById(message.jobId())
+                .orElseThrow(() -> new JobNotFoundException(message.jobId()));
+
+        if ("DONE".equals(message.status())) {
+            job.setStatus(JobStatus.DONE);
+            if (message.lineCount() != null) {
+                job.setLineCount(message.lineCount());
+            }
+        } else {
+            job.setStatus(JobStatus.FAILED);
+            job.setErrorMessage(message.errorMessage());
+        }
+        job.setFinishedAt(Instant.now());
+        jobRepository.save(job);
+
+        jobLogService.invalidate(message.jobId());
+
+        log.info("Job {} marked as {}", message.jobId(), job.getStatus());
     }
 
     @Transactional(readOnly = true)
