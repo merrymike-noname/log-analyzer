@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/log-analyzer.iml" filepath="$PROJECT_DIR$/log-analyzer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ml-worker/ml-worker.iml" filepath="$PROJECT_DIR$/ml-worker/ml-worker.iml" />
     </modules>
   </component>
 </project>

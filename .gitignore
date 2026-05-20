@@ -3,6 +3,11 @@ usage.md
 .env
 .idea/*
 
+ml-worker/.venv/
+ml-worker/models/*.pkl
+**/__pycache__/
+**/*.pyc
+
 # Java/Spring
 backend/target/
 backend/.mvn/
