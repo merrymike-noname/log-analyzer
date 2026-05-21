@@ -8,6 +8,9 @@ ml-worker/models/*.pkl
 **/__pycache__/
 **/*.pyc
 
+ml-training/.venv/
+ml-training/datasets/
+
 # Java/Spring
 backend/target/
 backend/.mvn/

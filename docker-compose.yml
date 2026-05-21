@@ -72,7 +72,7 @@ services:
       RABBIT_USER: ${RABBITMQ_USER}
       RABBIT_PASS: ${RABBITMQ_PASS}
       DATA_DIR: /data/jobs
-      LOG_LEVEL: INFO
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - logs_data:/data/jobs
     depends_on:
