@@ -5,6 +5,7 @@ import sys
 
 from config import config
 from messages import AnalyzeTaskMessage, JobResultMessage
+from model_loader import load_model
 from pipeline import analyze_file
 from rabbit_client import RabbitClient
 
@@ -16,16 +17,22 @@ logging.getLogger("pika").setLevel(logging.WARNING)
 logger = logging.getLogger("ml-worker")
 
 
-def handle_analyze_task(task: AnalyzeTaskMessage) -> JobResultMessage:
-    try:
-        line_count = analyze_file(task.jobId, task.parsedPath)
-        return JobResultMessage(jobId=task.jobId, status="DONE", lineCount=line_count)
-    except Exception as e:
-        logger.exception("Failed to analyze job %s", task.jobId)
-        return JobResultMessage(jobId=task.jobId, status="FAILED", errorMessage=str(e))
-
-
 def main() -> int:
+    # Fail-fast: model must be present at startup
+    try:
+        model = load_model()
+    except Exception:
+        logger.exception("Failed to load model — worker cannot start")
+        return 1
+
+    def handle_analyze_task(task: AnalyzeTaskMessage) -> JobResultMessage:
+        try:
+            line_count = analyze_file(task.jobId, task.parsedPath, model)
+            return JobResultMessage(jobId=task.jobId, status="DONE", lineCount=line_count)
+        except Exception as e:
+            logger.exception("Failed to analyze job %s", task.jobId)
+            return JobResultMessage(jobId=task.jobId, status="FAILED", errorMessage=str(e))
+
     client = RabbitClient()
 
     def shutdown(signum, frame):
