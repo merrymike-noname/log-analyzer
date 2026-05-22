@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional
 
 
-HRESULT_RE = re.compile(r"0x[0-9A-Fa-f]{8}")
+HRESULT_RE = re.compile(r"HRESULT\s*[:=]\s*0x[0-9A-Fa-f]{8}", re.IGNORECASE)
 ERROR_KEYWORDS = ("failed", "error", "exception", "fatal")
 WARNING_KEYWORDS = ("warning", "warn")
 
