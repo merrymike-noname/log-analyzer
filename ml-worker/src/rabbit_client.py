@@ -31,11 +31,15 @@ class RabbitClient:
         self._channel = self._connection.channel()
         self._channel.basic_qos(prefetch_count=1)
 
-        # Declare queue idempotently — params must match backend's RabbitConfig
         self._channel.queue_declare(
             queue=config.ANALYZE_QUEUE,
             durable=True,
             arguments={"x-dead-letter-exchange": "dlx.exchange"}
+        )
+        self._channel.exchange_declare(
+            exchange=config.RESULTS_EXCHANGE,
+            exchange_type="direct",
+            durable=True
         )
 
         logger.info("Connected to RabbitMQ at %s:%s", config.RABBIT_HOST, config.RABBIT_PORT)
@@ -60,8 +64,12 @@ class RabbitClient:
             self._connection.close()
             logger.info("RabbitMQ connection closed")
 
-    def consume_analyze_tasks(self, handler: Callable[[AnalyzeTaskMessage], JobResultMessage]) -> None:
-        """Blocks forever, calling handler for each incoming message."""
+    def consume_analyze_tasks(
+            self,
+            handler: Callable[[AnalyzeTaskMessage, "RabbitClient"], JobResultMessage]
+    ) -> None:
+        """Handler receives the task plus a reference to this client so it
+        can publish intermediate status messages (e.g. STARTED)."""
         if self._channel is None:
             raise RuntimeError("Not connected")
 
@@ -69,22 +77,19 @@ class RabbitClient:
             delivery_tag = method.delivery_tag
             try:
                 payload = json.loads(body)
-                # backend sends payload wrapped or unwrapped depending on Jackson config;
-                # support both for safety
                 if "jobId" not in payload and len(payload) == 1:
                     payload = next(iter(payload.values()))
                 message = AnalyzeTaskMessage.from_dict(payload)
                 logger.info("Received analyze task for job %s", message.jobId)
 
-                result = handler(message)
-                self.publish_result(result)
+                final_result = handler(message, self)
+                self.publish_result(final_result)
 
                 ch.basic_ack(delivery_tag=delivery_tag)
                 logger.info("Job %s acknowledged", message.jobId)
 
             except Exception as e:
                 logger.exception("Failed to process message: %s", e)
-                # send to DLQ (requeue=False)
                 ch.basic_nack(delivery_tag=delivery_tag, requeue=False)
 
         self._channel.basic_consume(queue=config.ANALYZE_QUEUE, on_message_callback=_on_message)
@@ -101,7 +106,7 @@ class RabbitClient:
             body=body,
             properties=pika.BasicProperties(
                 content_type="application/json",
-                delivery_mode=2,  # persistent
+                delivery_mode=2,
             ),
         )
         logger.info("Published result for job %s: status=%s", message.jobId, message.status)

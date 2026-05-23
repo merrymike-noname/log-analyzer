@@ -18,14 +18,16 @@ logger = logging.getLogger("ml-worker")
 
 
 def main() -> int:
-    # Fail-fast: model must be present at startup
     try:
         model = load_model()
     except Exception:
         logger.exception("Failed to load model — worker cannot start")
         return 1
 
-    def handle_analyze_task(task: AnalyzeTaskMessage) -> JobResultMessage:
+    def handle_analyze_task(task: AnalyzeTaskMessage, client: RabbitClient) -> JobResultMessage:
+        # Notify backend that processing has started
+        client.publish_result(JobResultMessage(jobId=task.jobId, status="STARTED"))
+
         try:
             line_count = analyze_file(task.jobId, task.parsedPath, model)
             return JobResultMessage(jobId=task.jobId, status="DONE", lineCount=line_count)

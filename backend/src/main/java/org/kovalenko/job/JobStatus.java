@@ -2,7 +2,7 @@ package org.kovalenko.job;
 
 public enum JobStatus {
     QUEUED,
-    // PROCESSING,
+    PROCESSING,
     DONE,
     FAILED
 }

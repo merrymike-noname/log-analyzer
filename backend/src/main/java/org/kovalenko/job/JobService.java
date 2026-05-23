@@ -57,7 +57,6 @@ public class JobService {
             job.setLineCount(lineCount);
             jobRepository.save(job);
 
-            // Hand off to ML worker via queue
             AnalyzeTaskMessage message = new AnalyzeTaskMessage(
                     jobId,
                     fileStorage.parsedPath(jobId).toString()
@@ -78,28 +77,41 @@ public class JobService {
     }
 
     /**
-     * Called by JobResultConsumer when ML worker reports completion.
+     * Called by JobResultConsumer when the ML worker reports a status update.
+     * Handles three statuses: STARTED, DONE, FAILED.
      */
     @Transactional
     public void applyResult(JobResultMessage message) {
         Job job = jobRepository.findById(message.jobId())
                 .orElseThrow(() -> new JobNotFoundException(message.jobId()));
 
-        if ("DONE".equals(message.status())) {
-            job.setStatus(JobStatus.DONE);
-            if (message.lineCount() != null) {
-                job.setLineCount(message.lineCount());
+        switch (message.status()) {
+            case "STARTED" -> {
+                job.setStatus(JobStatus.PROCESSING);
+                job.setStartedAt(Instant.now());
             }
-        } else {
-            job.setStatus(JobStatus.FAILED);
-            job.setErrorMessage(message.errorMessage());
+            case "DONE" -> {
+                job.setStatus(JobStatus.DONE);
+                if (message.lineCount() != null) {
+                    job.setLineCount(message.lineCount());
+                }
+                job.setFinishedAt(Instant.now());
+                jobLogService.invalidate(message.jobId());
+            }
+            case "FAILED" -> {
+                job.setStatus(JobStatus.FAILED);
+                job.setErrorMessage(message.errorMessage());
+                job.setFinishedAt(Instant.now());
+                jobLogService.invalidate(message.jobId());
+            }
+            default -> {
+                log.warn("Unknown status received for job {}: {}", message.jobId(), message.status());
+                return;
+            }
         }
-        job.setFinishedAt(Instant.now());
+
         jobRepository.save(job);
-
-        jobLogService.invalidate(message.jobId());
-
-        log.info("Job {} marked as {}", message.jobId(), job.getStatus());
+        log.info("Job {} -> {}", message.jobId(), job.getStatus());
     }
 
     @Transactional(readOnly = true)

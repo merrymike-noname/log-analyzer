@@ -14,7 +14,7 @@ class AnalyzeTaskMessage:
 @dataclass
 class JobResultMessage:
     jobId: str
-    status: str                       # "DONE" or "FAILED"
+    status: str                       # "STARTED" | "DONE" | "FAILED"
     errorMessage: Optional[str] = None
     lineCount: Optional[int] = None
 
