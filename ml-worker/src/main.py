@@ -25,9 +25,7 @@ def main() -> int:
         return 1
 
     def handle_analyze_task(task: AnalyzeTaskMessage, client: RabbitClient) -> JobResultMessage:
-        # Notify backend that processing has started
         client.publish_result(JobResultMessage(jobId=task.jobId, status="STARTED"))
-
         try:
             line_count = analyze_file(task.jobId, task.parsedPath, model)
             return JobResultMessage(jobId=task.jobId, status="DONE", lineCount=line_count)
@@ -38,9 +36,8 @@ def main() -> int:
     client = RabbitClient()
 
     def shutdown(signum, frame):
-        logger.info("Received signal %s, shutting down", signum)
-        client.close()
-        sys.exit(0)
+        logger.info("Received signal %s, requesting graceful stop", signum)
+        client.request_stop()
 
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
@@ -50,8 +47,10 @@ def main() -> int:
         client.consume_analyze_tasks(handle_analyze_task)
     except Exception:
         logger.exception("Worker crashed")
-        client.close()
         return 1
+    finally:
+        client.close()
+        logger.info("Worker shutdown complete")
 
     return 0
 

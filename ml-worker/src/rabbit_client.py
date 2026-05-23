@@ -17,6 +17,7 @@ class RabbitClient:
     def __init__(self):
         self._connection: pika.BlockingConnection | None = None
         self._channel: BlockingChannel | None = None
+        self._stopping = False
 
     def connect(self) -> None:
         credentials = pika.PlainCredentials(config.RABBIT_USER, config.RABBIT_PASS)
@@ -59,17 +60,38 @@ class RabbitClient:
                 time.sleep(delay)
                 delay = min(delay * 2, 30)
 
+    def request_stop(self) -> None:
+        """Signal-safe: marks the client for shutdown.
+        The actual stop happens in the consumer loop after the current message."""
+        logger.info("Stop requested — will exit after current message")
+        self._stopping = True
+        # add_callback_threadsafe schedules cancellation on the IO loop;
+        # safe to call from a signal handler
+        if self._connection and not self._connection.is_closed:
+            try:
+                self._connection.add_callback_threadsafe(self._stop_consuming)
+            except Exception:
+                pass
+
+    def _stop_consuming(self) -> None:
+        if self._channel and self._channel.is_open:
+            try:
+                self._channel.stop_consuming()
+            except Exception:
+                logger.exception("Error while stopping consumer")
+
     def close(self) -> None:
         if self._connection and not self._connection.is_closed:
-            self._connection.close()
-            logger.info("RabbitMQ connection closed")
+            try:
+                self._connection.close()
+                logger.info("RabbitMQ connection closed")
+            except Exception:
+                logger.exception("Error while closing connection")
 
     def consume_analyze_tasks(
             self,
             handler: Callable[[AnalyzeTaskMessage, "RabbitClient"], JobResultMessage]
     ) -> None:
-        """Handler receives the task plus a reference to this client so it
-        can publish intermediate status messages (e.g. STARTED)."""
         if self._channel is None:
             raise RuntimeError("Not connected")
 
@@ -94,7 +116,10 @@ class RabbitClient:
 
         self._channel.basic_consume(queue=config.ANALYZE_QUEUE, on_message_callback=_on_message)
         logger.info("Waiting for messages on queue '%s'. Ctrl+C to exit.", config.ANALYZE_QUEUE)
-        self._channel.start_consuming()
+        try:
+            self._channel.start_consuming()
+        finally:
+            logger.info("Consumer loop exited")
 
     def publish_result(self, message: JobResultMessage) -> None:
         if self._channel is None:
