@@ -3,6 +3,7 @@ package org.kovalenko.job;
 import lombok.RequiredArgsConstructor;
 import org.kovalenko.common.dto.PageResponse;
 import org.kovalenko.job.analyzed.AnalyzedLogEntry;
+import org.kovalenko.job.analyzed.JobExportService;
 import org.kovalenko.job.analyzed.JobLogService;
 import org.kovalenko.job.analyzed.JobStatisticsService;
 import org.kovalenko.job.dto.JobResponse;
@@ -12,10 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.Set;
 import java.util.UUID;
@@ -29,6 +33,7 @@ public class JobController {
     private final JobService jobService;
     private final JobLogService jobLogService;
     private final JobStatisticsService jobStatisticsService;
+    private final JobExportService jobExportService;
 
     @PostMapping
     public ResponseEntity<JobResponse> upload(
@@ -87,6 +92,38 @@ public class JobController {
             @PathVariable UUID id) {
         jobService.getByIdForUser(id, userId);
         return ResponseEntity.ok(jobStatisticsService.compute(id));
+    }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<StreamingResponseBody> export(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "csv") String format, // for potential format expansion
+            @RequestParam(defaultValue = "comma") String delimiter, // comma or semicolon
+            @RequestParam(required = false) String severity,
+            @RequestParam(required = false) String component,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortDir) {
+
+        jobService.getByIdForUser(id, userId);
+
+        if (!"csv".equalsIgnoreCase(format)) {
+            throw new IllegalArgumentException("Unsupported export format: " + format);
+        }
+
+        char delim = "semicolon".equalsIgnoreCase(delimiter) ? ';' : ',';
+
+        Set<Severity> severities = parseSeverity(severity);
+        LogFilterRequest filter = new LogFilterRequest(severities, component, search, sortBy, sortDir, 0, Integer.MAX_VALUE);
+
+        StreamingResponseBody body = jobExportService.buildCsvStream(id, filter, delim);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"job-" + id + "-logs.csv\"")
+                .body(body);
     }
 
     private Set<Severity> parseSeverity(String raw) {
