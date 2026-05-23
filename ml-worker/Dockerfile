@@ -22,10 +22,5 @@ COPY models/ ./models/
 
 WORKDIR /app/src
 
-# Run as non-root for better security
-RUN useradd --create-home --shell /bin/bash worker \
-    && chown -R worker:worker /app
-USER worker
-
 # Use exec form so the process receives SIGTERM properly (PID 1)
 CMD ["python", "-u", "main.py"]

@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.kovalenko.common.dto.PageResponse;
 import org.kovalenko.job.analyzed.AnalyzedLogEntry;
 import org.kovalenko.job.analyzed.JobLogService;
+import org.kovalenko.job.analyzed.JobStatisticsService;
 import org.kovalenko.job.dto.JobResponse;
+import org.kovalenko.job.dto.JobStatisticsResponse;
 import org.kovalenko.job.dto.LogFilterRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,7 @@ public class JobController {
 
     private final JobService jobService;
     private final JobLogService jobLogService;
+    private final JobStatisticsService jobStatisticsService;
 
     @PostMapping
     public ResponseEntity<JobResponse> upload(
@@ -76,6 +79,14 @@ public class JobController {
             @PathVariable UUID id) {
         jobService.delete(id, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/statistics")
+    public ResponseEntity<JobStatisticsResponse> statistics(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id) {
+        jobService.getByIdForUser(id, userId);
+        return ResponseEntity.ok(jobStatisticsService.compute(id));
     }
 
     private Set<Severity> parseSeverity(String raw) {
