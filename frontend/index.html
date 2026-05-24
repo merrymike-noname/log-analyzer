@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>log-analyzer</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<header class="app-header">
+    <a href="index.html" class="brand">log-analyzer</a>
+</header>
+
+<main class="auth-screen">
+    <div class="card container--narrow" style="width: 100%;">
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-mode="login">Sign in</button>
+            <button class="auth-tab" data-mode="register">Create account</button>
+        </div>
+
+        <h1 id="formTitle">Sign in to log-analyzer</h1>
+        <p class="subtitle" id="formSubtitle">Enter your credentials to continue.</p>
+
+        <div id="alertContainer"></div>
+
+        <form id="authForm" novalidate>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required
+                       autocomplete="current-password" minlength="8">
+            </div>
+
+            <button type="submit" class="btn btn--primary btn--block" id="submitBtn">Sign in</button>
+        </form>
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    // If already authenticated — straight to jobs page
+    if (Auth.isAuthenticated()) {
+        window.location.href = 'jobs.html';
+    }
+
+    const tabs = document.querySelectorAll('.auth-tab');
+    const formTitle = document.getElementById('formTitle');
+    const formSubtitle = document.getElementById('formSubtitle');
+    const submitBtn = document.getElementById('submitBtn');
+    const passwordInput = document.getElementById('password');
+    const form = document.getElementById('authForm');
+    const alertContainer = document.getElementById('alertContainer');
+
+    let mode = 'login';
+
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+        mode = tab.dataset.mode;
+        tabs.forEach(t => t.classList.toggle('active', t === tab));
+        if (mode === 'login') {
+            formTitle.textContent = 'Sign in to log-analyzer';
+            formSubtitle.textContent = 'Enter your credentials to continue.';
+            submitBtn.textContent = 'Sign in';
+            passwordInput.autocomplete = 'current-password';
+        } else {
+            formTitle.textContent = 'Create your account';
+            formSubtitle.textContent = 'Password must be at least 8 characters.';
+            submitBtn.textContent = 'Create account';
+            passwordInput.autocomplete = 'new-password';
+        }
+        clearAlert();
+    }));
+
+    function showAlert(message, type = 'error') {
+        alertContainer.innerHTML =
+            `<div class="alert alert--${type}">${escapeHtml(message)}</div>`;
+    }
+
+    function clearAlert() {
+        alertContainer.innerHTML = '';
+    }
+
+    function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert();
+
+        const email = document.getElementById('email').value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+            showAlert('Email and password are required.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = mode === 'login' ? 'Signing in...' : 'Creating account...';
+
+        try {
+            if (mode === 'login') {
+                await Auth.login(email, password);
+            } else {
+                await Auth.register(email, password);
+            }
+            window.location.href = 'jobs.html';
+        } catch (err) {
+            showAlert(err.message || 'Something went wrong.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = mode === 'login' ? 'Sign in' : 'Create account';
+        }
+    });
+</script>
+
+</body>
+</html>
