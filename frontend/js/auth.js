@@ -2,7 +2,7 @@
  * Authentication helpers: login, register, logout, session check.
  */
 
-const Auth = {
+let Auth = {
     async login(email, password) {
         const data = await api.request('/auth/login', {
             method: 'POST',
