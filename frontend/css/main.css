@@ -211,3 +211,100 @@ body {
     justify-content: center;
     padding: 24px;
 }
+
+
+/* ========== Page header (within container) ========== */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+/* ========== Upload zone ========== */
+.upload-zone {
+    border: 2px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 32px 24px;
+    text-align: center;
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: border-color 0.1s, background-color 0.1s;
+}
+.upload-zone:hover,
+.upload-zone.dragover {
+    border-color: var(--accent);
+    background: #f0fdf4;
+}
+.upload-zone p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.upload-zone strong { color: var(--text-primary); }
+.upload-zone input[type="file"] { display: none; }
+.upload-progress {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* ========== Table ========== */
+.table-wrapper {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+thead th {
+    text-align: left;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-canvas);
+    border-bottom: 1px solid var(--border-default);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-muted);
+    font-size: 14px;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover { background: var(--bg-canvas); }
+
+/* ========== Status badges ========== */
+.status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+.status--queued     { background: #ddf4ff; color: #0969da; border-color: rgba(9, 105, 218, 0.3); }
+.status--processing { background: #fff8c5; color: #9a6700; border-color: rgba(154, 103, 0, 0.3); }
+.status--done       { background: #dafbe1; color: #1a7f37; border-color: rgba(26, 127, 55, 0.3); }
+.status--failed     { background: #ffebe9; color: #cf222e; border-color: rgba(207, 34, 46, 0.3); }
+
+/* ========== Misc ========== */
+.empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.flex-row { display: flex; align-items: center; gap: 12px; }
+.spacer { flex: 1; }
