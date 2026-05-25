@@ -385,3 +385,215 @@ tbody tr.clickable:hover { background: var(--bg-canvas); }
     color: var(--severity-critical);
     border-radius: var(--radius-md);
 }
+
+/* ========== Filters bar ========== */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.filters .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.filters label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.filters select,
+.filters input[type="text"] {
+    padding: 4px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    line-height: 20px;
+}
+.filters select:focus,
+.filters input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(31, 136, 61, 0.2);
+}
+.filters input[type="text"] { width: 220px; }
+
+/* Toggle buttons for severity */
+.toggle-group { display: inline-flex; gap: 4px; }
+.toggle {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+}
+.toggle:hover { background: var(--bg-canvas); }
+.toggle.active {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
+}
+
+/* ========== Logs table ========== */
+.logs-table { table-layout: fixed; }
+.logs-table th.col-line       { width: 60px; }
+.logs-table th.col-time       { width: 150px; }
+.logs-table th.col-component  { width: 70px; }
+.logs-table th.col-severity   { width: 100px; }
+.logs-table th.col-score      { width: 75px; }
+.logs-table th.col-message    { width: auto; }
+
+.logs-table .sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.logs-table .sortable:hover { color: var(--text-primary); }
+.logs-table .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+.logs-table .sortable.sorted .sort-arrow { color: var(--text-primary); }
+
+/* Severity left border accent */
+.logs-table tbody tr { border-left: 3px solid transparent; }
+.logs-table tbody tr.sev-CRITICAL { border-left-color: var(--severity-critical); }
+.logs-table tbody tr.sev-HIGH     { border-left-color: var(--severity-high); }
+.logs-table tbody tr.sev-MEDIUM   { border-left-color: var(--severity-medium); }
+
+.logs-table td.col-line { font-family: var(--font-mono); color: var(--text-muted); }
+.logs-table td.col-time { font-family: var(--font-mono); color: var(--text-secondary); }
+.logs-table td.col-score { font-family: var(--font-mono); }
+
+/* Message cell: truncate by default, wrap on expand */
+.logs-table td.col-message {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+.logs-table tr.expanded td.col-message {
+    white-space: normal;
+    word-break: break-all;
+}
+
+/* ========== Pagination ========== */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-default);
+    background: var(--bg-surface);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.pagination button {
+    padding: 4px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+.pagination button:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+.pagination button:not(:disabled):hover { background: var(--bg-canvas); }
+
+/* ========== Severity badges (unified) ========== */
+.severity {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+.severity--CRITICAL {
+    background: #ffebe9;
+    color: var(--severity-critical);
+    border-color: rgba(207, 34, 46, 0.3);
+}
+.severity--HIGH {
+    background: #fff1e5;
+    color: var(--severity-high);
+    border-color: rgba(188, 76, 0, 0.3);
+}
+.severity--MEDIUM {
+    background: #ddf4ff;
+    color: #0969da;
+    border-color: rgba(9, 105, 218, 0.3);
+}
+.severity--LOW {
+    background: #dafbe1;
+    color: var(--severity-low);
+    border-color: rgba(26, 127, 55, 0.3);
+}
+
+/* Update stat-card colors to match badges */
+.stat-card--medium .value { color: #0969da; }
+
+/* Update left border of rows to match new MEDIUM color */
+.logs-table tbody tr.sev-MEDIUM { border-left-color: #0969da; }
+
+/* ========== Sortable column headers — fix arrow positioning ========== */
+.logs-table th {
+    white-space: nowrap;
+}
+.logs-table .sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.logs-table .sortable .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+    /* Reserve space so the header doesn't jump when arrow appears */
+    width: 8px;
+    text-align: center;
+}
+.logs-table .sortable.sorted .sort-arrow { color: var(--text-primary); }
+
+/* ========== Pagination with page input ========== */
+.pagination .page-jump {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+}
+.pagination .page-jump input {
+    width: 56px;
+    padding: 3px 6px;
+    font-size: 13px;
+    font-family: inherit;
+    text-align: center;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+.pagination .page-jump input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(31, 136, 61, 0.2);
+}
