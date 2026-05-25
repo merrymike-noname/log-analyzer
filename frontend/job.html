@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job · log-analyzer</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<header class="app-header">
+  <a href="jobs.html" class="brand">log-analyzer</a>
+  <div class="flex-row">
+    <span class="user-info" id="userInfo"></span>
+    <a href="#" id="logoutBtn" class="text-link">Sign out</a>
+  </div>
+</header>
+
+<main class="container">
+  <p><a href="jobs.html" class="text-link">← Back to uploads</a></p>
+
+  <div id="jobContent">
+    <div class="message-box">Loading...</div>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/job.js"></script>
+
+</body>
+</html>

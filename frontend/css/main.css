@@ -308,3 +308,80 @@ tbody tr.clickable:hover { background: var(--bg-canvas); }
 .mono { font-family: var(--font-mono); font-size: 13px; }
 .flex-row { display: flex; align-items: center; gap: 12px; }
 .spacer { flex: 1; }
+
+
+/* ========== Stats grid ========== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+.stat-card .label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+.stat-card .value {
+    font-size: 24px;
+    font-weight: 600;
+}
+.stat-card--critical .value { color: var(--severity-critical); }
+.stat-card--high     .value { color: var(--severity-high); }
+.stat-card--medium   .value { color: var(--severity-medium); }
+.stat-card--low      .value { color: var(--severity-low); }
+
+/* ========== Job details header ========== */
+.job-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+.job-meta span strong { color: var(--text-primary); margin-right: 4px; }
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn--danger {
+    color: var(--severity-critical);
+    border-color: var(--border-default);
+}
+.btn--danger:hover {
+    background: #ffebe9;
+    border-color: rgba(207, 34, 46, 0.4);
+}
+
+.btn--outline {
+    background: var(--bg-surface);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+.btn--outline:hover {
+    background: var(--bg-canvas);
+    border-color: var(--border-muted);
+}
+
+/* ========== Inline messages ========== */
+.message-box {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+.message-box--error {
+    background: #ffebe9;
+    color: var(--severity-critical);
+    border-radius: var(--radius-md);
+}
