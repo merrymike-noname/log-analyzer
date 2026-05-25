@@ -106,18 +106,41 @@
     function renderActions(job) {
         const bar = document.getElementById('actionsBar');
         const buttons = [];
+
         if (job.status === 'DONE') {
-            buttons.push(`<a class="btn btn--outline" href="#" id="exportBtn">Export CSV</a>`);
+            buttons.push(`
+            <div class="dropdown" id="exportDropdown">
+                <button class="btn btn--outline" id="exportBtn">Export CSV ▾</button>
+                <div class="dropdown-menu">
+                    <button class="dropdown-item" data-delimiter="comma">
+                        Comma <span class="hint">(standard)</span>
+                    </button>
+                    <button class="dropdown-item" data-delimiter="semicolon">
+                        Semicolon <span class="hint">(Excel UA/EU)</span>
+                    </button>
+                </div>
+            </div>
+        `);
         }
         buttons.push(`<button class="btn btn--danger" id="deleteBtn">Delete</button>`);
         bar.innerHTML = buttons.join('');
 
-        const exportBtn = document.getElementById('exportBtn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert('Export will be wired up in a later step.');
+        const dropdown = document.getElementById('exportDropdown');
+        if (dropdown) {
+            const btn = document.getElementById('exportBtn');
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
             });
+            // Click outside closes the menu
+            document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+            dropdown.querySelectorAll('.dropdown-item').forEach(item =>
+                item.addEventListener('click', async () => {
+                    dropdown.classList.remove('open');
+                    await downloadCsv(job, item.dataset.delimiter);
+                })
+            );
         }
 
         document.getElementById('deleteBtn').addEventListener('click', async () => {
@@ -129,6 +152,53 @@
                 alert(`Failed to delete: ${err.message}`);
             }
         });
+    }
+
+    async function downloadCsv(job, delimiter) {
+        // Build URL with the same filters currently applied to the table
+        const params = new URLSearchParams({
+            format: 'csv',
+            delimiter,
+            sortBy: state.sortBy,
+            sortDir: state.sortDir,
+        });
+        if (state.severity.size > 0) params.set('severity', [...state.severity].join(','));
+        if (state.component) params.set('component', state.component);
+        if (state.search) params.set('search', state.search);
+
+        try {
+            // api.request returns the raw Response for non-JSON content types
+            const response = await api.request(`/jobs/${job.id}/export?${params}`);
+            const blob = await response.blob();
+
+            const filename = extractFilename(response) || defaultFilename(job);
+            triggerDownload(blob, filename);
+        } catch (err) {
+            alert(`Export failed: ${err.message}`);
+        }
+    }
+
+    function extractFilename(response) {
+        const cd = response.headers.get('Content-Disposition');
+        if (!cd) return null;
+        const match = cd.match(/filename="([^"]+)"/);
+        return match ? match[1] : null;
+    }
+
+    function defaultFilename(job) {
+        const safe = (job.originalFilename || 'logs').replace(/\.[^.]+$/, '');
+        return `${safe}-${job.id.substring(0, 8)}.csv`;
+    }
+
+    function triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     async function renderStatistics() {
