@@ -134,64 +134,104 @@
     async function renderStatistics() {
         const body = document.getElementById('jobBody');
         body.innerHTML = `<div class="card"><h2>Summary</h2>
-            <div class="message-box">Loading statistics...</div></div>`;
+        <div class="message-box">Loading statistics...</div></div>`;
 
         let stats;
         try {
             stats = await api.request(`/jobs/${jobId}/statistics`);
         } catch (err) {
             body.innerHTML = `<div class="card"><h2>Summary</h2>
-                <div class="message-box message-box--error">
-                    Failed to load statistics: ${escapeHtml(err.message)}
-                </div></div>`;
+            <div class="message-box message-box--error">
+                Failed to load statistics: ${escapeHtml(err.message)}
+            </div></div>`;
             return;
         }
 
         const sev = stats.severityBreakdown || {};
         body.innerHTML = `
-            <div class="card">
-                <h2>Severity breakdown</h2>
-                <div class="stats-grid">
-                    <div class="stat-card stat-card--critical">
-                        <div class="label">Critical</div>
-                        <div class="value">${(sev.CRITICAL || 0).toLocaleString()}</div>
-                    </div>
-                    <div class="stat-card stat-card--high">
-                        <div class="label">High</div>
-                        <div class="value">${(sev.HIGH || 0).toLocaleString()}</div>
-                    </div>
-                    <div class="stat-card stat-card--medium">
-                        <div class="label">Medium</div>
-                        <div class="value">${(sev.MEDIUM || 0).toLocaleString()}</div>
-                    </div>
-                    <div class="stat-card stat-card--low">
-                        <div class="label">Low</div>
-                        <div class="value">${(sev.LOW || 0).toLocaleString()}</div>
-                    </div>
+        <div class="card">
+            <h2>Severity breakdown</h2>
+            <div class="stats-grid">
+                <div class="stat-card stat-card--critical">
+                    <div class="label">Critical</div>
+                    <div class="value">${(sev.CRITICAL || 0).toLocaleString()}</div>
+                </div>
+                <div class="stat-card stat-card--high">
+                    <div class="label">High</div>
+                    <div class="value">${(sev.HIGH || 0).toLocaleString()}</div>
+                </div>
+                <div class="stat-card stat-card--medium">
+                    <div class="label">Medium</div>
+                    <div class="value">${(sev.MEDIUM || 0).toLocaleString()}</div>
+                </div>
+                <div class="stat-card stat-card--low">
+                    <div class="label">Low</div>
+                    <div class="value">${(sev.LOW || 0).toLocaleString()}</div>
                 </div>
             </div>
-            <div class="card">
-                <h2>Overview</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="label">Total entries</div>
-                        <div class="value">${stats.totalEntries.toLocaleString()}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="label">Unique templates</div>
-                        <div class="value">${stats.uniqueTemplates.toLocaleString()}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="label">Median score</div>
-                        <div class="value">${formatScore(stats.scoreDistribution?.median)}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="label">Max score</div>
-                        <div class="value">${formatScore(stats.scoreDistribution?.max)}</div>
-                    </div>
+        </div>
+
+        <div class="card">
+            <h2>Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Total entries</div>
+                    <div class="value">${stats.totalEntries.toLocaleString()}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Unique templates</div>
+                    <div class="value">${stats.uniqueTemplates.toLocaleString()}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Median score</div>
+                    <div class="value">${formatScore(stats.scoreDistribution?.median)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Max score</div>
+                    <div class="value">${formatScore(stats.scoreDistribution?.max)}</div>
                 </div>
             </div>
-        `;
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Severity distribution</h3>
+                <div class="chart-wrapper chart-wrapper--small">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Anomaly score distribution</h3>
+                <div class="chart-wrapper chart-wrapper--small">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card chart-card--full">
+                <h3>Top templates</h3>
+                <div class="chart-wrapper">
+                    <canvas id="templatesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+
+        Charts.applyDefaults();
+        Charts.severityDonut(
+            document.getElementById('severityChart'),
+            stats.severityBreakdown || {}
+        );
+        if (stats.scoreDistribution && stats.scoreDistribution.min != null) {
+            Charts.scoreDistributionBar(
+                document.getElementById('scoreChart'),
+                stats.scoreDistribution
+            );
+        }
+        if (stats.topTemplates && stats.topTemplates.length > 0) {
+            Charts.topTemplatesBar(
+                document.getElementById('templatesChart'),
+                stats.topTemplates
+            );
+        }
     }
 
     function renderLogsSection() {

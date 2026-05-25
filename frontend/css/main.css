@@ -597,3 +597,37 @@ tbody tr.clickable:hover { background: var(--bg-canvas); }
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(31, 136, 61, 0.2);
 }
+
+/* ========== Charts ========== */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.chart-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 20px;
+}
+.chart-card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.chart-card--full {
+    grid-column: 1 / -1;
+}
+.chart-wrapper {
+    position: relative;
+    height: 220px;
+}
+.chart-wrapper--small {
+    height: 200px;
+}
+
+@media (max-width: 720px) {
+    .charts-grid { grid-template-columns: 1fr; }
+}
